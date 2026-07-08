@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="theme-color" content="#2563eb"/>
+  <title>巴尔干 8/19–8/30 完整行程地图 · 按日分色</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; height: 100%; overflow: hidden; }
+    body {
+      font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+    #app { position: relative; width: 100%; height: 100%; }
+    #map { height: 100%; width: 100%; touch-action: none; }
+
+    .panel {
+      position: absolute; top: 10px; left: 10px; z-index: 1000;
+      background: rgba(255,255,255,0.97); border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.18); padding: 12px 14px;
+      max-width: 360px; max-height: calc(100% - 20px); overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .panel-handle { display: none; }
+
+    .panel-toggle-fab {
+      display: none;
+      position: absolute; z-index: 1001;
+      right: 12px; bottom: 12px;
+      background: #2563eb; color: #fff; border: none;
+      border-radius: 999px; padding: 12px 18px;
+      font-size: 14px; font-weight: 600;
+      box-shadow: 0 4px 16px rgba(37,99,235,.45);
+      cursor: pointer;
+    }
+
+    .panel h1 { font-size: 14px; margin: 0 0 4px; }
+    .panel .sub { font-size: 11px; color: #666; margin-bottom: 8px; line-height: 1.4; }
+    .day-block { margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+    .day-title {
+      font-size: 12px; font-weight: 700; margin-bottom: 4px;
+      display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;
+      min-height: 36px; padding: 4px 0;
+    }
+    .day-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+    .day-route { font-size: 10px; color: #888; margin-left: 18px; margin-bottom: 4px; }
+    .poi-item {
+      font-size: 11px; color: #333; margin: 2px 0 2px 18px; cursor: pointer;
+      line-height: 1.35; padding: 8px 0; min-height: 36px;
+    }
+    .poi-item:active { color: #c00; background: rgba(0,0,0,.04); margin-left: 14px; padding-left: 4px; border-radius: 6px; }
+    .poi-item:hover { color: #c00; }
+    .poi-item .tag { font-size: 9px; color: #999; margin-left: 4px; display: block; margin-top: 2px; }
+    .status { font-size: 11px; padding: 8px 10px; background: #f3f4f6; border-radius: 6px; margin-bottom: 8px; }
+    .note { font-size: 10px; color: #999; margin-top: 6px; line-height: 1.4; }
+    .toggle-all {
+      font-size: 12px; color: #2563eb; cursor: pointer; margin-bottom: 6px;
+      padding: 8px 0; min-height: 36px; display: flex; align-items: center;
+    }
+    .stay-block {
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+      border: 1.5px solid #f59e0b; border-radius: 10px;
+      padding: 10px 10px 8px; margin-bottom: 10px;
+    }
+    .stay-block h2 { font-size: 12px; margin: 0 0 6px; color: #b45309; }
+    .stay-city {
+      font-size: 12px; font-weight: 700; margin: 6px 0 2px; color: #92400e; cursor: pointer;
+      padding: 6px 0; min-height: 36px; display: flex; align-items: center;
+    }
+    .stay-city:active { color: #c00; }
+    .stay-city:hover { color: #c00; }
+    .stay-detail { font-size: 10px; color: #78716c; margin-left: 8px; line-height: 1.4; }
+    .zh-map-label { background: none !important; border: none !important; }
+    .zh-map-label span { pointer-events: none; user-select: none; }
+
+    .leaflet-control-layers { font-size: 13px; }
+    .leaflet-popup-content { font-size: 14px; line-height: 1.45; margin: 12px 14px; }
+    .leaflet-popup-content a { font-size: 14px; padding: 4px 0; display: inline-block; }
+
+    @media (max-width: 768px) {
+      body.panel-open { overflow: hidden; }
+
+      #map { height: 100%; }
+
+      .panel {
+        top: auto; left: 0; right: 0; bottom: 0;
+        max-width: none; width: 100%;
+        max-height: 72vh;
+        border-radius: 16px 16px 0 0;
+        padding: 0 16px 16px;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom));
+        transform: translateY(calc(100% - 64px));
+        transition: transform .28s ease;
+        box-shadow: 0 -4px 24px rgba(0,0,0,.15);
+      }
+      body.panel-open .panel { transform: translateY(0); }
+
+      .panel-handle {
+        display: block;
+        width: 40px; height: 5px; background: #d1d5db;
+        border-radius: 3px; margin: 10px auto 8px;
+        cursor: pointer;
+      }
+      .panel-header-compact {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 8px; padding-bottom: 4px; cursor: pointer;
+        min-height: 44px;
+      }
+      .panel-header-compact h1 { margin: 0; font-size: 15px; flex: 1; }
+      .panel-chevron { color: #666; font-size: 12px; flex-shrink: 0; }
+
+      .panel-body { overflow-y: auto; max-height: calc(72vh - 56px); -webkit-overflow-scrolling: touch; }
+      body:not(.panel-open) .panel-body { display: none; }
+      body:not(.panel-open) .panel .sub,
+      body:not(.panel-open) .panel .note { display: none; }
+
+      .panel-toggle-fab { display: block; bottom: calc(72px + env(safe-area-inset-bottom)); }
+      body.panel-open .panel-toggle-fab { display: none; }
+
+      .leaflet-top.leaflet-right { top: 8px; right: 8px; }
+      .leaflet-control-layers-expanded { max-height: 40vh; overflow-y: auto; }
+      .leaflet-bar a { width: 36px; height: 36px; line-height: 36px; font-size: 18px; }
+
+      .poi-item { font-size: 13px; }
+      .day-title { font-size: 13px; }
+    }
+
+    @media (min-width: 769px) {
+      .panel-header-compact { cursor: default; }
+      .panel-header-compact .panel-chevron { display: none; }
+      .panel-body { display: block !important; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+<div id="map"></div>
+<button type="button" class="panel-toggle-fab" id="panelFab" aria-label="打开行程列表">📋 行程</button>
+<div class="panel" id="panel">
+  <div class="panel-handle" id="panelHandle" aria-hidden="true"></div>
+  <div class="panel-header-compact" id="panelHeader">
+    <h1>🗺️ 8/19–8/30 巴尔干行程</h1>
+    <span class="panel-chevron" id="panelChevron">上滑展开 ▲</span>
+  </div>
+  <div class="panel-body">
+  <p class="sub">完整底图地名 + 主要城市中文标注 · 点击日期显示/隐藏 · 右上角切换底图</p>
+  <div class="status" id="status">正在加载道路路线…</div>
+  <div class="toggle-all" id="toggleAll">⇅ 全部显示/隐藏</div>
+  <div class="stay-block" id="stayBlock">
+    <h2>🏨 三城市中心 · 住宿参考</h2>
+    <div id="stayList"></div>
+    <p class="stay-detail" style="margin:6px 0 0">地图上 <b>金色大标</b>=最繁华核心 · <b>金色虚线圈</b>=建议 Airbnb 范围</p>
+  </div>
+  <div id="sidebar"></div>
+  <p class="note">© CARTO / OpenStreetMap · 点击点位名定位 · 弹窗可开 Google Maps</p>
+  </div>
+</div>
+</div>
+<script>
+const ZH_PLACE_LABELS = [
+  { name: "塞尔维亚", lat: 44.15, lon: 21.0, minZoom: 5, maxZoom: 7, kind: "country" },
+  { name: "波黑", lat: 44.05, lon: 17.8, minZoom: 5, maxZoom: 7, kind: "country" },
+  { name: "克罗地亚", lat: 44.6, lon: 16.2, minZoom: 5, maxZoom: 7, kind: "country" },
+  { name: "黑山", lat: 42.75, lon: 19.25, minZoom: 6, maxZoom: 8, kind: "country" },
+  { name: "匈牙利", lat: 46.5, lon: 19.5, minZoom: 5, maxZoom: 6, kind: "country" },
+  { name: "罗马尼亚", lat: 45.5, lon: 24.5, minZoom: 5, maxZoom: 6, kind: "country" },
+  { name: "亚得里亚海", lat: 43.0, lon: 16.5, minZoom: 6, maxZoom: 9, kind: "water" },
+  { name: "多瑙河", lat: 44.82, lon: 20.55, minZoom: 9, kind: "water" },
+  { name: "贝尔格莱德", lat: 44.817, lon: 20.457, minZoom: 7 },
+  { name: "诺维萨德", lat: 45.255, lon: 19.845, minZoom: 8 },
+  { name: "尼什", lat: 43.32, lon: 21.895, minZoom: 8 },
+  { name: "乌日策", lat: 43.858, lon: 19.848, minZoom: 8 },
+  { name: "泽蒙", lat: 44.845, lon: 20.410, minZoom: 9 },
+  { name: "新贝尔格莱德", lat: 44.805, lon: 20.415, minZoom: 10 },
+  { name: "维舍格勒", lat: 43.782, lon: 19.292, minZoom: 9 },
+  { name: "萨拉热窝", lat: 43.856, lon: 18.413, minZoom: 7 },
+  { name: "莫斯塔尔", lat: 43.343, lon: 17.808, minZoom: 8 },
+  { name: "亚伊采", lat: 44.342, lon: 17.269, minZoom: 9 },
+  { name: "比哈奇", lat: 44.817, lon: 15.868, minZoom: 9 },
+  { name: "图兹拉", lat: 44.538, lon: 18.676, minZoom: 9 },
+  { name: "杜布罗文克", lat: 42.641, lon: 18.108, minZoom: 7 },
+  { name: "斯普利特", lat: 43.508, lon: 16.440, minZoom: 8 },
+  { name: "萨格勒布", lat: 45.815, lon: 15.982, minZoom: 7 },
+  { name: "扎达尔", lat: 44.119, lon: 15.231, minZoom: 9 },
+  { name: "希贝尼克", lat: 43.735, lon: 15.895, minZoom: 9 },
+  { name: "科托尔", lat: 42.424, lon: 18.771, minZoom: 9 },
+  { name: "波德戈里察", lat: 42.441, lon: 19.262, minZoom: 9 },
+  { name: "地拉那", lat: 41.327, lon: 19.819, minZoom: 7 },
+  { name: "斯科普里", lat: 41.998, lon: 21.431, minZoom: 8 },
+  { name: "卢布尔雅那", lat: 46.056, lon: 14.505, minZoom: 7 },
+  { name: "布达佩斯", lat: 47.497, lon: 19.040, minZoom: 7 },
+  { name: "十六湖", lat: 44.865, lon: 15.582, minZoom: 9 },
+  { name: "科尼茨", lat: 43.651, lon: 17.965, minZoom: 10 },
+  { name: "亚布拉尼察", lat: 43.924, lon: 18.169, minZoom: 10 },
+  { name: "斯图宾", lat: 44.615, lon: 19.520, minZoom: 10 },
+  { name: "索波特", lat: 44.519, lon: 20.568, minZoom: 11 },
+  { name: "布拉加伊", lat: 43.256, lon: 17.888, minZoom: 11 },
+  { name: "波奇泰利", lat: 43.133, lon: 17.767, minZoom: 11 },
+  { name: "斯通", lat: 42.839, lon: 17.697, minZoom: 11 },
+  { name: "卡夫塔特", lat: 42.581, lon: 18.218, minZoom: 11 },
+  { name: "洛克鲁姆岛", lat: 42.630, lon: 18.115, minZoom: 12 }
+];
+
+const STAY_CENTERS = [
+  {
+    id: "stay-beg",
+    city: "🇷🇸 贝尔格莱德",
+    color: "#f59e0b",
+    hub: {
+      name: "最繁华核心 · 共和国广场",
+      lat: 44.8176, lon: 20.4569,
+      sub: "Trg Republike — 米哈伊洛大街 & 国家博物馆 & 商业起点"
+    },
+    zone: {
+      lat: 44.8195, lon: 20.4585,
+      radius: 850,
+      label: "建议 Airbnb 范围：Stari Grad / Dorćol / 近 Vračar"
+    },
+    tips: "订房关键词：Republic Square、Skadarlija、Dorćol；D2 步行可达"
+  },
+  {
+    id: "stay-sar",
+    city: "🇧🇦 萨拉热窝",
+    color: "#f59e0b",
+    hub: {
+      name: "最繁华核心 · 塞比利喷泉 Baščaršija",
+      lat: 43.8588, lon: 18.4292,
+      sub: "老城巴扎心脏 — 餐厅、铜匠街、清真寺"
+    },
+    hub2: {
+      name: "商业步行街 · Ferhadija",
+      lat: 43.8590, lon: 18.4255,
+      sub: "东西方交界 · 永久火焰 · 大教堂"
+    },
+    zone: {
+      lat: 43.8590, lon: 18.4275,
+      radius: 650,
+      label: "建议 Airbnb：Baščaršija / Ferhadija / Bistrik 步行圈"
+    },
+    tips: "拉丁桥、黄堡均在步行15–20分钟内"
+  },
+  {
+    id: "stay-dub",
+    city: "🇭🇷 杜布罗文克",
+    color: "#f59e0b",
+    hub: {
+      name: "最繁华核心 · Stradun 主街",
+      lat: 42.6414, lon: 18.1081,
+      sub: "Placa 石灰岩主街 — 店铺、餐厅（古城内禁车）"
+    },
+    zone: {
+      lat: 42.6568, lon: 18.0845,
+      radius: 700,
+      label: "建议订房区：Gruž / Lapad（停车+公交进古城）"
+    },
+    stayPin: {
+      name: "🏨 实用住宿中心 · Gruž 港口区",
+      lat: 42.6593, lon: 18.0895,
+      sub: "还车、港口、公交8路进 Pile Gate"
+    },
+    tips: "古城内不可停车；勿订 Old Town 内 unless 无车"
+  }
+];
+
+const DAYS = [
+  {
+    id: "d1", date: "8/19", label: "D1 抵达日", color: "#64748b",
+    mode: "flight", dash: null,
+    desc: "重庆→贝尔格莱德 · 路上日",
+    waypoints: [[20.2913,44.8184],[20.4569,44.8176]],
+    pois: [
+      { id:"d1-beg", name:"贝尔格莱德机场 BEG", sub:"取车 · 入住", lat:44.8184, lon:20.2913, emoji:"✈️" }
+    ]
+  },
+  {
+    id: "d2", date: "8/20", label: "D2 贝尔格莱德市中心", color: "#2563eb",
+    mode: "walk", dash: "8,8",
+    desc: "全天步行 · 老城精华",
+    waypoints: [[20.4569,44.8176],[20.4685,44.7981],[20.4500,44.8235],[20.4680,44.8230],[20.4655,44.8238],[20.4569,44.8176]],
+    pois: [
+      { id:"d2-rep", name:"共和国广场 Trg Republike", sub:"国家博物馆（同址）", lat:44.8176, lon:20.4569, emoji:"🏛️" },
+      { id:"d2-mus", name:"贝尔格莱德国家博物馆", sub:"10:00–12:30", lat:44.8174, lon:20.4562, emoji:"🖼️" },
+      { id:"d2-sava", name:"圣萨瓦大教堂", sub:"Hram Svetog Save · 1.5–2h", lat:44.7981, lon:20.4685, emoji:"⛪" },
+      { id:"d2-dor", name:"Stari Grad 老城 / Dorćol", sub:"老城步行区", lat:44.8230, lon:20.4680, emoji:"🚶" },
+      { id:"d2-knez", name:"米哈伊洛大街 Knez Mihailova", sub:"步行至要塞", lat:44.8200, lon:20.4530, emoji:"🚶" },
+      { id:"d2-kal", name:"卡莱梅格丹要塞 Kalemegdan", sub:"日落 · 两河交汇", lat:44.8235, lon:20.4500, emoji:"🏰" },
+      { id:"d2-ska", name:"斯卡达里加 Skadarlija", sub:"晚餐", lat:44.8238, lon:20.4655, emoji:"🍽️" }
+    ]
+  },
+  {
+    id: "d3", date: "8/21", label: "D3 Kosmaj 南线半日", color: "#dc2626",
+    mode: "drive", dash: null,
+    desc: "10:00–17:00 自驾 · 不含啤酒厂",
+    waypoints: [[20.4569,44.8176],[20.5144,44.6958],[20.5675,44.5197],[20.5711,44.4684],[20.4569,44.8176]],
+    pois: [
+      { id:"d3-ava-t", name:"阿瓦拉塔 Avala Tower", sub:"205m · 南斯拉夫电视塔", lat:44.6958, lon:20.5144, emoji:"📡" },
+      { id:"d3-ava-h", name:"无名英雄纪念碑", sub:"Meštrović · 阿瓦拉山", lat:44.6910, lon:20.5120, emoji:"🗿" },
+      { id:"d3-nika", name:"Sopot「Nika」雕塑", sub:"1972 混凝土 · Dom kulture", lat:44.5192, lon:20.5675, emoji:"🔺" },
+      { id:"d3-sop", name:"索波特小镇 Sopot", sub:"上 Kosmaj 前经停", lat:44.5197, lon:20.5680, emoji:"🏘️" },
+      { id:"d3-kos", name:"Kosmaj 红星纪念碑", sub:"自由火花 Spomenik · 山顶", lat:44.4684, lon:20.5711, emoji:"⭐" }
+    ]
+  },
+  {
+    id: "d4", date: "8/22", label: "D4 建筑线→泽蒙→乌日策", color: "#ea580c",
+    mode: "drive", dash: null,
+    desc: "前南建筑 + 弹孔纪念碑 · 夜宿乌日策",
+    waypoints: [[20.4569,44.8176],[20.4989,44.8125],[20.5122,44.7842],[20.4174,44.8178],[20.4193,44.7919],[20.4103,44.8444],[19.7422,43.9119],[19.8428,43.8586]],
+    pois: [
+      { id:"d4-tob", name:"Toblerone Tower 三角楼", sub:"Mije Kovačevića 9 · Karaburma", lat:44.8125, lon:20.4989, emoji:"🔺" },
+      { id:"d4-rudo", name:"Rudo 东城门", sub:"Istočna Kapija · brutalist", lat:44.7842, lon:20.5122, emoji:"🏢" },
+      { id:"d4-gen", name:"Genex Tower 西城门", sub:"Zapadna kapija · Block 33", lat:44.8178, lon:20.4174, emoji:"🏢" },
+      { id:"d4-sava", name:"Sava Centar 萨瓦中心", sub:"前南会址 · 河畔", lat:44.7919, lon:20.4193, emoji:"🏛️" },
+      { id:"d4-zem", name:"泽蒙 Zemun · Gardoš 塔", sub:"多瑙河滨 · 上午", lat:44.8444, lon:20.4103, emoji:"🗼" },
+      { id:"d4-kad", name:"弹孔纪念碑 Kadinjača", sub:"乌日策旁14km · 铁托揭幕", lat:43.9119, lon:19.7422, emoji:"⭐" },
+      { id:"d4-uzi", name:"乌日策 Užice", sub:"过夜", lat:43.8586, lon:19.8428, emoji:"🏨" }
+    ]
+  },
+  {
+    id: "d5", date: "8/23", label: "D5 乌日策→维舍格勒→萨拉热窝", color: "#9333ea",
+    mode: "drive", dash: null,
+    desc: "德里纳河峡谷 · 傍晚到萨拉热窝",
+    waypoints: [[19.8428,43.8586],[19.2886,43.7825],[18.4312,43.8594]],
+    pois: [
+      { id:"d5-vise", name:"维舍格勒 Višegrad", sub:"德里纳河大桥 UNESCO", lat:43.7825, lon:19.2886, emoji:"🌉" },
+      { id:"d5-br", name:"Mehmed Paša 大桥", sub:"《德里纳河上的桥》", lat:43.7820, lon:19.2895, emoji:"🌉" },
+      { id:"d5-sar", name:"萨拉热窝 Baščaršija", sub:"入住 · 老城初探", lat:43.8594, lon:18.4312, emoji:"🕌" }
+    ]
+  },
+  {
+    id: "d6", date: "8/24", label: "D6 萨拉热窝全日", color: "#7c3aed",
+    mode: "walk", dash: "8,8",
+    desc: "步行 · 老城文化线",
+    waypoints: [[18.4312,43.8594],[18.4290,43.8577],[18.4377,43.8615],[18.4312,43.8594]],
+    pois: [
+      { id:"d6-bas", name:"Baščaršija 巴扎老城", sub:"塞比利喷泉 · 铜匠街", lat:43.8594, lon:18.4312, emoji:"🕌" },
+      { id:"d6-lat", name:"拉丁桥 Latin Bridge", sub:"距巴扎步行约5–8min · 1914", lat:43.8577, lon:18.4290, emoji:"🌉" },
+      { id:"d6-yel", name:"黄堡 Yellow Fortress", sub:"Žuta Tabija · 巴扎 uphill 15min", lat:43.8615, lon:18.4377, emoji:"🏔️" },
+      { id:"d6-tun", name:"隧道博物馆（可选·需打车）", sub:"机场旁 Butmir · 距市中心约5km", lat:43.8197, lon:18.3372, emoji:"🕳️" }
+    ]
+  },
+  {
+    id: "d7", date: "8/25", label: "D7 萨拉热窝→莫斯塔尔", color: "#0891b2",
+    mode: "drive", dash: null,
+    desc: "M17 内雷特瓦峡谷",
+    waypoints: [[18.4312,43.8594],[17.9614,43.6517],[17.7597,43.6613],[17.8150,43.3373]],
+    pois: [
+      { id:"d7-kon", name:"Konjic 科尼茨", sub:"途中经停 · 旧桥", lat:43.6517, lon:17.9614, emoji:"🏘️" },
+      { id:"d7-jab", name:"Jablanica 亚布拉尼察", sub:"内雷特瓦河战役桥", lat:43.6613, lon:17.7597, emoji:"🌉" },
+      { id:"d7-mos", name:"莫斯塔尔 Stari Most", sub:"老桥 UNESCO · 过夜", lat:43.3373, lon:17.8150, emoji:"🌉" },
+      { id:"d7-bla", name:"布拉加伊 Blagaj（可选）", sub:"苏菲 tekke · 河源头", lat:43.2563, lon:17.8878, emoji:"🕌" }
+    ]
+  },
+  {
+    id: "d8", date: "8/26", label: "D8 莫斯塔尔→杜布罗文克", color: "#059669",
+    mode: "drive", dash: null,
+    desc: "跨境 · 可选 Počitelj",
+    waypoints: [[17.8150,43.3373],[17.7667,43.1333],[18.0895,42.6593]],
+    pois: [
+      { id:"d8-poc", name:"Počitelj 波奇泰利（可选）", sub:"中世纪山城", lat:43.1333, lon:17.7667, emoji:"🏰" },
+      { id:"d8-gru", name:"杜布罗文克 Gruž 港口区", sub:"入住 · 还车", lat:42.6593, lon:18.0895, emoji:"⚓" },
+      { id:"d8-old", name:"杜布罗文克古城 Pile Gate", sub:"傍晚初探", lat:42.6419, lon:18.1055, emoji:"🏖️" }
+    ]
+  },
+  {
+    id: "d9", date: "8/27", label: "D9 杜布罗文克 · 城墙日", color: "#0d9488",
+    mode: "walk", dash: "8,8",
+    desc: "古城步行",
+    waypoints: [[18.1055,42.6419],[18.1070,42.6400],[18.1020,42.6380],[18.1055,42.6419]],
+    pois: [
+      { id:"d9-wall", name:"古城墙 City Walls", sub:"早8点 · 约€35", lat:42.6419, lon:18.1055, emoji:"🏰" },
+      { id:"d9-str", name:"Stradun 主街", sub:"古城中心", lat:42.6400, lon:18.1070, emoji:"🚶" },
+      { id:"d9-ban", name:"Banje 海滩", sub:"拍城墙经典角度", lat:42.6380, lon:18.1020, emoji:"🏖️" },
+      { id:"d9-srd", name:"Srđ 山缆车（可选）", sub:"俯瞰全城", lat:42.6490, lon:18.1080, emoji:"🚡" }
+    ]
+  },
+  {
+    id: "d10", date: "8/28", label: "D10 杜布罗文克 · 深度", color: "#14b8a6",
+    mode: "local", dash: "6,6",
+    desc: "海岛或小镇",
+    waypoints: [[18.0895,42.6593],[18.1150,42.6300],[18.2180,42.5810],[18.0895,42.6593]],
+    pois: [
+      { id:"d10-lok", name:"洛克鲁姆岛 Lokrum（可选）", sub:"船游", lat:42.6300, lon:18.1150, emoji:"🏝️" },
+      { id:"d10-cav", name:"Cavtat 卡夫塔特（可选）", sub:"海滨小镇", lat:42.5810, lon:18.2180, emoji:"🏘️" }
+    ]
+  },
+  {
+    id: "d11", date: "8/29", label: "D11 杜布罗文克 · 缓冲", color: "#2dd4bf",
+    mode: "local", dash: "6,6",
+    desc: "Ston 半日或休息",
+    waypoints: [[18.0895,42.6593],[17.6967,42.8394],[18.0895,42.6593]],
+    pois: [
+      { id:"d11-ston", name:"Ston 斯通（可选）", sub:"欧洲长城 · 牡蛎", lat:42.8394, lon:17.6967, emoji:"🦪" },
+      { id:"d11-dub", name:"杜布罗文克补逛", sub:"购物 · 补拍", lat:42.6419, lon:18.1055, emoji:"🏖️" }
+    ]
+  },
+  {
+    id: "d12", date: "8/30", label: "D8/30 返程", color: "#475569",
+    mode: "flight", dash: null,
+    desc: "DBV → 重庆",
+    waypoints: [[18.0895,42.6593],[20.2913,44.8184]],
+    pois: [
+      { id:"d12-dbv", name:"杜布罗文克机场 DBV", sub:"还车 · 回国", lat:42.5614, lon:18.2682, emoji:"✈️" }
+    ]
+  }
+];
+
+const map = L.map("map", { center: [43.2, 20.0], zoom: 7, tap: true });
+
+function isMobile() { return window.matchMedia("(max-width: 768px)").matches; }
+
+function refreshMapSize() {
+  setTimeout(() => map.invalidateSize(), 320);
+}
+
+function setPanelOpen(open) {
+  document.body.classList.toggle("panel-open", open);
+  const chevron = document.getElementById("panelChevron");
+  if (chevron) chevron.textContent = open ? "下滑收起 ▼" : "上滑展开 ▲";
+  refreshMapSize();
+}
+
+document.getElementById("panelFab").onclick = () => setPanelOpen(true);
+document.getElementById("panelHeader").onclick = () => {
+  if (isMobile()) setPanelOpen(!document.body.classList.contains("panel-open"));
+};
+document.getElementById("panelHandle").onclick = () => {
+  if (isMobile()) setPanelOpen(!document.body.classList.contains("panel-open"));
+};
+
+window.addEventListener("resize", refreshMapSize);
+window.matchMedia("(max-width: 768px)").addEventListener("change", e => {
+  if (!e.matches) document.body.classList.remove("panel-open");
+  refreshMapSize();
+});
+
+const cartoAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>';
+
+const cartoVoyager = L.tileLayer(
+  "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
+  { subdomains: "abcd", maxZoom: 19, attribution: cartoAttribution }
+);
+
+const osmLayer = L.tileLayer(
+  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  { subdomains: "abc", maxZoom: 18, attribution: cartoAttribution }
+);
+
+const osmDeLayer = L.tileLayer(
+  "https://tile.openstreetmap.de/{z}/{x}/{y}.png",
+  { maxZoom: 18, attribution: cartoAttribution }
+);
+
+cartoVoyager.addTo(map);
+
+const zhLabelGroup = L.layerGroup();
+ZH_PLACE_LABELS.forEach(item => {
+  const isCountry = item.kind === "country";
+  const isWater = item.kind === "water";
+  const color = isWater ? "#1d4ed8" : "#b45309";
+  const size = isCountry ? 14 : isWater ? 12 : 12;
+  const weight = isCountry ? 800 : 700;
+  const marker = L.marker([item.lat, item.lon], {
+    interactive: false,
+    labelMeta: item,
+    icon: L.divIcon({
+      className: "zh-map-label",
+      html: `<span style="font-size:${size}px;font-weight:${weight};color:${color};background:rgba(255,255,255,0.82);padding:1px 5px;border-radius:4px;border:1px solid rgba(180,83,9,0.35);box-shadow:0 1px 3px rgba(0,0,0,.15);white-space:nowrap">${item.name}</span>`,
+      iconSize: [0, 0],
+      iconAnchor: [0, 0]
+    })
+  });
+  zhLabelGroup.addLayer(marker);
+});
+
+function refreshZhLabels() {
+  const z = map.getZoom();
+  zhLabelGroup.eachLayer(layer => {
+    const m = layer.options.labelMeta;
+    const show = z >= m.minZoom && (!m.maxZoom || z <= m.maxZoom);
+    if (layer._icon) layer._icon.style.display = show ? "" : "none";
+  });
+}
+
+zhLabelGroup.addTo(map);
+
+L.control.layers(
+  {
+    "Carto 完整地名": cartoVoyager,
+    "OpenStreetMap": osmLayer,
+    "OSM 德国镜像": osmDeLayer
+  },
+  { "中文地名（主要城市）": zhLabelGroup },
+  { position: "topright", collapsed: isMobile() }
+).addTo(map);
+
+map.on("zoomend", refreshZhLabels);
+refreshZhLabels();
+
+const routeLayers = {};
+const markerLayers = {};
+const stayLayerGroup = L.layerGroup().addTo(map);
+const dayVisible = {};
+let allVisible = true;
+
+function addStayCenters() {
+  const list = document.getElementById("stayList");
+  STAY_CENTERS.forEach(s => {
+    const hubIcon = L.divIcon({
+      className: "",
+      html: `<div style="background:#f59e0b;border:3px solid #fff;border-radius:4px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 3px 12px rgba(0,0,0,.45);font-weight:bold;color:#fff">★</div>`,
+      iconSize: [38, 38], iconAnchor: [19, 19]
+    });
+    const hubMarker = L.marker([s.hub.lat, s.hub.lon], { icon: hubIcon, zIndexOffset: 1000 })
+      .bindPopup(`<b style="color:#b45309">${s.city}</b><br/><b>${s.hub.name}</b><br/><small>${s.hub.sub}</small><br/><hr style="margin:6px 0"/><small>${s.tips}</small><br/><a href="https://www.google.com/maps?q=${s.hub.lat},${s.hub.lon}" target="_blank">Google Maps →</a>`);
+    stayLayerGroup.addLayer(hubMarker);
+
+    if (s.hub2) {
+      const h2 = L.marker([s.hub2.lat, s.hub2.lon], {
+        icon: L.divIcon({
+          className: "",
+          html: `<div style="background:#fff;border:2.5px solid #f59e0b;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 6px rgba(0,0,0,.3)">商</div>`,
+          iconSize: [24, 24], iconAnchor: [12, 12]
+        }), zIndexOffset: 900
+      }).bindPopup(`<b>${s.hub2.name}</b><br/><small>${s.hub2.sub}</small>`);
+      stayLayerGroup.addLayer(h2);
+    }
+
+    if (s.stayPin) {
+      const sp = L.marker([s.stayPin.lat, s.stayPin.lon], {
+        icon: L.divIcon({
+          className: "",
+          html: `<div style="background:#2563eb;border:2.5px solid #fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,.35)">🏨</div>`,
+          iconSize: [30, 30], iconAnchor: [15, 15]
+        }), zIndexOffset: 950
+      }).bindPopup(`<b>${s.stayPin.name}</b><br/><small>${s.stayPin.sub}</small>`);
+      stayLayerGroup.addLayer(sp);
+    }
+
+    const circle = L.circle([s.zone.lat, s.zone.lon], {
+      radius: s.zone.radius,
+      color: "#f59e0b", weight: 2, dashArray: "6,6",
+      fillColor: "#fbbf24", fillOpacity: 0.15
+    }).bindPopup(`<b>${s.city} · 建议住宿范围</b><br/><small>${s.zone.label}</small>`);
+    stayLayerGroup.addLayer(circle);
+
+    const block = document.createElement("div");
+    block.innerHTML = `<div class="stay-city" data-lat="${s.hub.lat}" data-lon="${s.hub.lon}">${s.city}</div>
+      <div class="stay-detail">★ ${s.hub.name.replace("最繁华核心 · ","")}</div>
+      ${s.hub2 ? `<div class="stay-detail">商 ${s.hub2.name.replace("商业步行街 · ","")}</div>` : ""}
+      ${s.stayPin ? `<div class="stay-detail">🏨 ${s.stayPin.name.replace("🏨 ","")}</div>` : ""}
+      <div class="stay-detail">圈 ${s.zone.label}</div>`;
+    block.querySelector(".stay-city").onclick = () => {
+      map.setView([s.hub.lat, s.hub.lon], isMobile() ? 14 : 15);
+      hubMarker.openPopup();
+      if (isMobile()) setPanelOpen(false);
+    };
+    list.appendChild(block);
+  });
+}
+
+async function fetchOsrm(waypoints) {
+  const s = waypoints.map(([lon, lat]) => `${lon},${lat}`).join(";");
+  const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${s}?overview=full&geometries=geojson`);
+  const data = await res.json();
+  if (data.code !== "Ok") throw new Error(data.code);
+  return data.routes[0].geometry;
+}
+
+function addMarkers(day) {
+  const group = L.layerGroup();
+  day.pois.forEach(p => {
+    const icon = L.divIcon({
+      className: "",
+      html: `<div style="background:#fff;border:2.5px solid ${day.color};border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 2px 8px rgba(0,0,0,.35)">${p.emoji}</div>`,
+      iconSize: [32, 32], iconAnchor: [16, 16]
+    });
+    const m = L.marker([p.lat, p.lon], { icon })
+      .bindPopup(`<b style="color:${day.color}">${day.label}</b><br/><b>${p.name}</b><br/><small>${p.sub}</small><br/><a href="https://www.google.com/maps?q=${p.lat},${p.lon}" target="_blank">Google Maps →</a>`);
+    m._poiId = p.id;
+    group.addLayer(m);
+  });
+  group.addTo(map);
+  markerLayers[day.id] = group;
+}
+
+function buildSidebar() {
+  const sb = document.getElementById("sidebar");
+  DAYS.forEach(day => {
+    dayVisible[day.id] = true;
+    const block = document.createElement("div");
+    block.className = "day-block";
+    block.id = "block-" + day.id;
+
+    const title = document.createElement("div");
+    title.className = "day-title";
+    title.innerHTML = `<span class="day-dot" style="background:${day.color}"></span><span>${day.date} ${day.label}</span>`;
+    title.onclick = () => toggleDay(day.id);
+
+    const routeDesc = document.createElement("div");
+    routeDesc.className = "day-route";
+    routeDesc.textContent = day.desc + (day.mode === "walk" ? " · 虚线" : day.mode === "drive" ? " · 实线=公路" : "");
+
+    block.appendChild(title);
+    block.appendChild(routeDesc);
+    day.pois.forEach(p => {
+      const el = document.createElement("div");
+      el.className = "poi-item";
+      el.innerHTML = `${p.emoji} ${p.name} <span class="tag">${p.sub}</span>`;
+      el.onclick = () => {
+        map.setView([p.lat, p.lon], isMobile() ? 14 : 15);
+        markerLayers[day.id].eachLayer(l => {
+          if (l._poiId === p.id) l.openPopup();
+        });
+        if (isMobile()) setPanelOpen(false);
+      };
+      block.appendChild(el);
+    });
+    sb.appendChild(block);
+  });
+}
+
+function toggleDay(id) {
+  dayVisible[id] = !dayVisible[id];
+  const vis = dayVisible[id];
+  if (routeLayers[id]) vis ? map.addLayer(routeLayers[id]) : map.removeLayer(routeLayers[id]);
+  if (markerLayers[id]) vis ? map.addLayer(markerLayers[id]) : map.removeLayer(markerLayers[id]);
+  document.getElementById("block-" + id).style.opacity = vis ? 1 : 0.4;
+}
+
+document.getElementById("toggleAll").onclick = () => {
+  allVisible = !allVisible;
+  DAYS.forEach(d => {
+    dayVisible[d.id] = allVisible;
+    if (routeLayers[d.id]) allVisible ? map.addLayer(routeLayers[d.id]) : map.removeLayer(routeLayers[d.id]);
+    if (markerLayers[d.id]) allVisible ? map.addLayer(markerLayers[d.id]) : map.removeLayer(markerLayers[d.id]);
+    const b = document.getElementById("block-" + d.id);
+    if (b) b.style.opacity = allVisible ? 1 : 0.4;
+  });
+};
+
+buildSidebar();
+addStayCenters();
+
+(async () => {
+  const bounds = [];
+  try {
+    for (const day of DAYS) {
+      addMarkers(day);
+      let geom;
+      if (day.mode === "drive") {
+        geom = await fetchOsrm(day.waypoints);
+      } else {
+        geom = { type: "LineString", coordinates: day.waypoints };
+      }
+      const layer = L.geoJSON(geom, {
+        style: {
+          color: day.color,
+          weight: day.mode === "walk" || day.mode === "local" ? 4 : 5,
+          opacity: day.mode === "flight" ? 0.35 : 0.88,
+          dashArray: day.dash || (day.mode === "flight" ? "4,12" : null)
+        }
+      });
+      layer.addTo(map);
+      routeLayers[day.id] = layer;
+      bounds.push(layer.getBounds());
+    }
+    const b = bounds.reduce((acc, x) => acc.extend(x));
+    map.fitBounds(b.pad(isMobile() ? 0.08 : 0.05));
+    refreshMapSize();
+    document.getElementById("status").textContent = "✅ 已加载 " + DAYS.length + " 天路线 · " +
+      DAYS.reduce((n,d)=>n+d.pois.length,0) + " 个点位";
+    document.getElementById("status").style.background = "#dcfce7";
+  } catch (e) {
+    document.getElementById("status").textContent = "⚠️ 部分路线加载失败，请刷新 · 点位仍可见";
+    document.getElementById("status").style.background = "#fef3c7";
+  }
+})();
+</script>
+</body>
+</html>
