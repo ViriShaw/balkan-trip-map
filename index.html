@@ -81,6 +81,24 @@
     .leaflet-control-layers { font-size: 13px; }
     .leaflet-popup-content { font-size: 14px; line-height: 1.45; margin: 12px 14px; }
     .leaflet-popup-content a { font-size: 14px; padding: 4px 0; display: inline-block; }
+    .quick-links {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 8px 0;
+    }
+    .quick-links a {
+      text-decoration: none;
+      text-align: center;
+      color: #2563eb;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 9px 8px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .quick-links a:active { background: #dbeafe; }
 
     @media (max-width: 768px) {
       body.panel-open { overflow: hidden; }
@@ -149,6 +167,10 @@
   </div>
   <div class="panel-body">
   <p class="sub">完整底图地名 + 主要城市中文标注 · 点击日期显示/隐藏 · 右上角切换底图</p>
+  <div class="quick-links">
+    <a href="./plan.html">文字版行程</a>
+    <a href="./CURSOR_HANDOFF.md">Cursor 交接</a>
+  </div>
   <div class="status" id="status">正在加载道路路线…</div>
   <div class="toggle-all" id="toggleAll">⇅ 全部显示/隐藏</div>
   <div class="stay-block" id="stayBlock">
