@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="theme-color" content="#2563eb"/>
-  <title>巴尔干三国环线 8/19–8/30 行程地图</title>
+  <title>巴尔干环线 8/19–8/30 · 塞波黑山 · 按日分色</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
@@ -162,11 +162,11 @@
 <div class="panel" id="panel">
   <div class="panel-handle" id="panelHandle" aria-hidden="true"></div>
   <div class="panel-header-compact" id="panelHeader">
-    <h1>🗺️ 8/19–8/30 三国环线</h1>
+    <h1>🗺️ 塞·波·黑山环线 8/19–8/30</h1>
     <span class="panel-chevron" id="panelChevron">上滑展开 ▲</span>
   </div>
   <div class="panel-body">
-  <p class="sub">完整底图地名 + 主要城市中文标注 · 点击日期显示/隐藏 · 右上角切换底图</p>
+  <p class="sub">BEG 进出环线 · 不去克罗地亚 · 前两国日程保留 · 后半程改黑山科托尔湾</p>
   <div class="quick-links">
     <a href="./plan.html">文字版行程</a>
     <a href="./CURSOR_HANDOFF.md">Cursor 交接</a>
@@ -174,9 +174,9 @@
   <div class="status" id="status">正在加载道路路线…</div>
   <div class="toggle-all" id="toggleAll">⇅ 全部显示/隐藏</div>
   <div class="stay-block" id="stayBlock">
-    <h2>🏨 主要住宿中心 · 参考</h2>
+    <h2>🏨 三城市中心 · 住宿参考</h2>
     <div id="stayList"></div>
-    <p class="stay-detail" style="margin:6px 0 0">地图上 <b>金色大标</b>=住宿/活动核心 · <b>金色虚线圈</b>=建议 Airbnb 范围</p>
+    <p class="stay-detail" style="margin:6px 0 0">地图上 <b>金色大标</b>=最繁华核心 · <b>金色虚线圈</b>=建议 Airbnb 范围</p>
   </div>
   <div id="sidebar"></div>
   <p class="note">© CARTO / OpenStreetMap · 点击点位名定位 · 弹窗可开 Google Maps</p>
@@ -187,6 +187,7 @@
 const ZH_PLACE_LABELS = [
   { name: "塞尔维亚", lat: 44.15, lon: 21.0, minZoom: 5, maxZoom: 7, kind: "country" },
   { name: "波黑", lat: 44.05, lon: 17.8, minZoom: 5, maxZoom: 7, kind: "country" },
+  { name: "克罗地亚", lat: 44.6, lon: 16.2, minZoom: 5, maxZoom: 7, kind: "country" },
   { name: "黑山", lat: 42.75, lon: 19.25, minZoom: 6, maxZoom: 8, kind: "country" },
   { name: "匈牙利", lat: 46.5, lon: 19.5, minZoom: 5, maxZoom: 6, kind: "country" },
   { name: "罗马尼亚", lat: 45.5, lon: 24.5, minZoom: 5, maxZoom: 6, kind: "country" },
@@ -204,30 +205,21 @@ const ZH_PLACE_LABELS = [
   { name: "亚伊采", lat: 44.342, lon: 17.269, minZoom: 9 },
   { name: "比哈奇", lat: 44.817, lon: 15.868, minZoom: 9 },
   { name: "图兹拉", lat: 44.538, lon: 18.676, minZoom: 9 },
-  { name: "特雷比涅", lat: 42.711, lon: 18.344, minZoom: 9 },
-  { name: "新海尔采格", lat: 42.453, lon: 18.537, minZoom: 10 },
-  { name: "佩拉斯特", lat: 42.487, lon: 18.699, minZoom: 11 },
-  { name: "科托尔", lat: 42.424, lon: 18.771, minZoom: 9 },
-  { name: "布德瓦", lat: 42.291, lon: 18.840, minZoom: 9 },
-  { name: "采蒂涅", lat: 42.391, lon: 18.914, minZoom: 10 },
-  { name: "洛夫琴", lat: 42.399, lon: 18.837, minZoom: 10 },
-  { name: "扎布利亚克", lat: 43.155, lon: 19.122, minZoom: 9 },
-  { name: "杜米托尔", lat: 43.145, lon: 19.083, minZoom: 10 },
-  { name: "塔拉峡谷", lat: 43.150, lon: 19.295, minZoom: 10 },
-  { name: "兹拉蒂博尔", lat: 43.729, lon: 19.700, minZoom: 9 },
-  { name: "波德戈里察", lat: 42.441, lon: 19.262, minZoom: 9 },
+  { name: "科托尔", lat: 42.425, lon: 18.771, minZoom: 7 },
+  { name: "佩拉斯特", lat: 42.487, lon: 18.699, minZoom: 10 },
+  { name: "布德瓦", lat: 42.286, lon: 18.840, minZoom: 9 },
+  { name: "赫尔采格诺维", lat: 42.451, lon: 18.538, minZoom: 10 },
+  { name: "波德戈里察", lat: 42.441, lon: 19.262, minZoom: 8 },
+  { name: "尼克希奇", lat: 42.773, lon: 18.945, minZoom: 9 },
+  { name: "特雷比涅", lat: 42.712, lon: 18.344, minZoom: 9 },
   { name: "地拉那", lat: 41.327, lon: 19.819, minZoom: 7 },
   { name: "斯科普里", lat: 41.998, lon: 21.431, minZoom: 8 },
-  { name: "卢布尔雅那", lat: 46.056, lon: 14.505, minZoom: 7 },
   { name: "布达佩斯", lat: 47.497, lon: 19.040, minZoom: 7 },
   { name: "科尼茨", lat: 43.651, lon: 17.965, minZoom: 10 },
-  { name: "亚布拉尼察", lat: 43.924, lon: 18.169, minZoom: 10 },
-  { name: "斯图宾", lat: 44.615, lon: 19.520, minZoom: 10 },
+  { name: "亚布拉尼察", lat: 43.661, lon: 17.760, minZoom: 10 },
   { name: "索波特", lat: 44.519, lon: 20.568, minZoom: 11 },
   { name: "布拉加伊", lat: 43.256, lon: 17.888, minZoom: 11 },
-  { name: "波奇泰利", lat: 43.133, lon: 17.767, minZoom: 11 },
-  { name: "黑湖", lat: 43.150, lon: 19.093, minZoom: 12 },
-  { name: "杜尔杰维恰塔拉大桥", lat: 43.149, lon: 19.295, minZoom: 12 }
+  { name: "波奇泰利", lat: 43.133, lon: 17.767, minZoom: 11 }
 ];
 
 const STAY_CENTERS = [
@@ -270,40 +262,24 @@ const STAY_CENTERS = [
   },
   {
     id: "stay-kot",
-    city: "🇲🇪 科托尔湾",
+    city: "🇲🇪 科托尔",
     color: "#f59e0b",
     hub: {
-      name: "海湾核心 · 科托尔古城",
+      name: "最繁华核心 · 科托尔古城",
       lat: 42.4247, lon: 18.7712,
-      sub: "Kotor Old Town — 海湾、城墙、餐厅最集中"
+      sub: "UNESCO 城墙老城 — 湾景、餐厅（古城内禁车）"
     },
     zone: {
-      lat: 42.4247, lon: 18.7712,
+      lat: 42.4300, lon: 18.7650,
       radius: 900,
-      label: "建议 Airbnb：Kotor Old Town 外围 / Dobrota / Muo（停车更现实）"
+      label: "建议订房区：Dobrota / Škaljari（停车+步行进古城）"
     },
     stayPin: {
-      name: "🏨 实用住宿带 · Dobrota 海湾",
-      lat: 42.4422, lon: 18.7665,
-      sub: "离古城近，停车比城内友好"
+      name: "🏨 实用住宿中心 · Dobrota 湾岸",
+      lat: 42.4410, lon: 18.7655,
+      sub: "可停车 · 沿湾进古城约10–15min"
     },
-    tips: "科托尔古城停车紧张；有车更建议住 Dobrota / Muo / Prcanj"
-  },
-  {
-    id: "stay-zab",
-    city: "🇲🇪 扎布利亚克",
-    color: "#f59e0b",
-    hub: {
-      name: "山区核心 · Zabljak 小镇",
-      lat: 43.1547, lon: 19.1219,
-      sub: "Durmitor 国家公园门户，适合住一晚切长途"
-    },
-    zone: {
-      lat: 43.1547, lon: 19.1219,
-      radius: 900,
-      label: "建议 Airbnb：Zabljak 镇中心 / Black Lake 路口附近"
-    },
-    tips: "D11 北返贝尔格莱德前的关键休整点"
+    tips: "古城内不可停车；勿订 Old Town 内 unless 无车"
   }
 ];
 
@@ -311,10 +287,10 @@ const DAYS = [
   {
     id: "d1", date: "8/19", label: "D1 抵达日", color: "#64748b",
     mode: "flight", dash: null,
-    desc: "重庆→广州中转→贝尔格莱德 · 路上日",
+    desc: "重庆→广州中转→贝尔格莱德 BEG · 路上日",
     waypoints: [[20.2913,44.8184],[20.4569,44.8176]],
     pois: [
-      { id:"d1-beg", name:"贝尔格莱德机场 BEG", sub:"取车 · 入住", lat:44.8184, lon:20.2913, emoji:"✈️" }
+      { id:"d1-beg", name:"尼古拉·特斯拉机场 BEG", sub:"取车 · 入住", lat:44.8184, lon:20.2913, emoji:"✈️" }
     ]
   },
   {
@@ -396,63 +372,54 @@ const DAYS = [
     ]
   },
   {
-    id: "d8", date: "8/26", label: "D8 莫斯塔尔→科托尔湾", color: "#059669",
+    id: "d8", date: "8/26", label: "D8 莫斯塔尔→科托尔", color: "#059669",
     mode: "drive", dash: null,
-    desc: "跨境黑山 · 海湾入住",
-    waypoints: [[17.8150,43.3373],[17.7667,43.1333],[18.3444,42.7117],[18.5375,42.4531],[18.6992,42.4869],[18.7712,42.4247]],
+    desc: "跨境进黑山 · 约4h · 可选特雷比涅",
+    waypoints: [[17.8150,43.3373],[17.7667,43.1333],[18.3442,42.7119],[18.7712,42.4247]],
     pois: [
       { id:"d8-poc", name:"Počitelj 波奇泰利（可选）", sub:"中世纪山城", lat:43.1333, lon:17.7667, emoji:"🏰" },
-      { id:"d8-tre", name:"特雷比涅 Trebinje", sub:"波黑南部小城 · 午餐/咖啡可选", lat:42.7117, lon:18.3444, emoji:"☕" },
-      { id:"d8-hn", name:"新海尔采格 Herceg Novi", sub:"进入科托尔湾西口", lat:42.4531, lon:18.5375, emoji:"🌊" },
-      { id:"d8-per", name:"佩拉斯特 Perast", sub:"海湾明信片视角 · 可短停", lat:42.4869, lon:18.6992, emoji:"⛪" },
-      { id:"d8-kot", name:"科托尔 Kotor", sub:"入住 · 古城初探", lat:42.4247, lon:18.7712, emoji:"🏨" }
+      { id:"d8-tre", name:"特雷比涅 Trebinje（可选）", sub:"过境前经停 · 老城", lat:42.7119, lon:18.3442, emoji:"🏘️" },
+      { id:"d8-kot", name:"科托尔古城 Kotor", sub:"UNESCO · 入住", lat:42.4247, lon:18.7712, emoji:"🏰" }
     ]
   },
   {
-    id: "d9", date: "8/27", label: "D9 科托尔湾全日", color: "#0d9488",
+    id: "d9", date: "8/27", label: "D9 科托尔湾精华", color: "#0d9488",
     mode: "local", dash: "6,6",
-    desc: "海湾古城 + 佩拉斯特",
-    waypoints: [[18.7712,42.4247],[18.7705,42.4260],[18.6992,42.4869],[18.6889,42.4864],[18.7712,42.4247]],
+    desc: "古城墙 + 佩拉斯特 + 圣母礁",
+    waypoints: [[18.7712,42.4247],[18.6992,42.4869],[18.6914,42.4889],[18.7712,42.4247]],
     pois: [
-      { id:"d9-old", name:"科托尔古城 Kotor Old Town", sub:"清晨/夜晚最舒服", lat:42.4247, lon:18.7712, emoji:"🏰" },
-      { id:"d9-wall", name:"科托尔城墙 / San Giovanni", sub:"上坡看海湾 · 建议早上", lat:42.4260, lon:18.7705, emoji:"🥾" },
-      { id:"d9-per", name:"佩拉斯特 Perast", sub:"海湾小镇 · 明信片视角", lat:42.4869, lon:18.6992, emoji:"⛪" },
-      { id:"d9-lady", name:"岩上圣母岛 Our Lady of the Rocks", sub:"佩拉斯特乘船可选", lat:42.4864, lon:18.6889, emoji:"⛵" }
+      { id:"d9-wall", name:"科托尔城墙 / 老城", sub:"早爬城墙 · 湾景", lat:42.4247, lon:18.7712, emoji:"🏰" },
+      { id:"d9-per", name:"佩拉斯特 Perast", sub:"巴洛克小镇 · 约20min", lat:42.4869, lon:18.6992, emoji:"🏘️" },
+      { id:"d9-gos", name:"圣母礁 Our Lady of the Rocks", sub:"船游小岛", lat:42.4889, lon:18.6914, emoji:"⛵" }
     ]
   },
   {
-    id: "d10", date: "8/28", label: "D10 科托尔→洛夫琴→扎布利亚克", color: "#14b8a6",
+    id: "d10", date: "8/28", label: "D10 科托尔湾深度", color: "#14b8a6",
+    mode: "local", dash: "6,6",
+    desc: "布德瓦或 Lovćen 盘山路",
+    waypoints: [[18.7712,42.4247],[18.8400,42.2864],[18.8180,42.3990],[18.7712,42.4247]],
+    pois: [
+      { id:"d10-bud", name:"布德瓦 Budva（可选）", sub:"海滨老城 · 约40min", lat:42.2864, lon:18.8400, emoji:"🏖️" },
+      { id:"d10-lov", name:"Lovćen 盘山路（可选）", sub:"25 弯俯瞰科托尔湾", lat:42.3990, lon:18.8180, emoji:"🏔️" }
+    ]
+  },
+  {
+    id: "d11", date: "8/29", label: "D11 科托尔→贝尔格莱德", color: "#2dd4bf",
     mode: "drive", dash: null,
-    desc: "山海公路 · 夜宿杜米托尔门户",
-    waypoints: [[18.7712,42.4247],[18.8370,42.3990],[18.9142,42.3906],[18.8403,42.2911],[19.2594,42.4304],[19.1219,43.1547]],
+    desc: "环线回程长途日 · 约8–10h · 夜宿贝尔格莱德",
+    waypoints: [[18.7712,42.4247],[19.2594,42.4304],[20.4569,44.8176]],
     pois: [
-      { id:"d10-lov", name:"洛夫琴国家公园 Lovćen", sub:"山路视野 · 天气好再上", lat:42.3990, lon:18.8370, emoji:"🏔️" },
-      { id:"d10-cet", name:"采蒂涅 Cetinje", sub:"黑山旧都 · 午餐/短停", lat:42.3906, lon:18.9142, emoji:"🏛️" },
-      { id:"d10-bud", name:"布德瓦 Budva（可选）", sub:"海滨古城 · 若想看海可绕行", lat:42.2911, lon:18.8403, emoji:"🏖️" },
-      { id:"d10-pod", name:"波德戈里察 Podgorica", sub:"补给/中转", lat:42.4304, lon:19.2594, emoji:"⛽" },
-      { id:"d10-zab", name:"扎布利亚克 Žabljak", sub:"入住 · Durmitor 门户", lat:43.1547, lon:19.1219, emoji:"🏨" }
+      { id:"d11-pod", name:"波德戈里察（途经）", sub:"可加油/午餐", lat:42.4304, lon:19.2594, emoji:"🍽️" },
+      { id:"d11-beg", name:"贝尔格莱德市中心", sub:"夜宿 · 次日还车", lat:44.8176, lon:20.4569, emoji:"🏨" }
     ]
   },
   {
-    id: "d11", date: "8/29", label: "D11 杜米托尔→贝尔格莱德", color: "#2dd4bf",
-    mode: "drive", dash: null,
-    desc: "塔拉峡谷 · 北上返塞尔维亚",
-    waypoints: [[19.1219,43.1547],[19.0930,43.1500],[19.2950,43.1490],[19.6500,43.3900],[19.7000,43.7290],[20.4569,44.8176]],
-    pois: [
-      { id:"d11-lake", name:"黑湖 Crno Jezero", sub:"清晨轻徒步可选", lat:43.1500, lon:19.0930, emoji:"🌲" },
-      { id:"d11-tara", name:"塔拉峡谷大桥 Đurđevića Tara", sub:"峡谷桥 · 北返前短停", lat:43.1490, lon:19.2950, emoji:"🌉" },
-      { id:"d11-border", name:"黑山→塞尔维亚边境段", sub:"预留排队时间", lat:43.3900, lon:19.6500, emoji:"🛂" },
-      { id:"d11-zla", name:"兹拉蒂博尔 Zlatibor（可选）", sub:"长途中途休息", lat:43.7290, lon:19.7000, emoji:"☕" },
-      { id:"d11-beg", name:"贝尔格莱德", sub:"最后一晚 · 方便次日机场", lat:44.8176, lon:20.4569, emoji:"🏨" }
-    ]
-  },
-  {
-    id: "d12", date: "8/30", label: "D12 BEG 返程", color: "#475569",
+    id: "d12", date: "8/30", label: "D12 返程", color: "#475569",
     mode: "flight", dash: null,
-    desc: "贝尔格莱德→广州中转→重庆",
+    desc: "BEG → 广州中转 → 重庆",
     waypoints: [[20.4569,44.8176],[20.2913,44.8184]],
     pois: [
-      { id:"d12-beg", name:"尼古拉·特斯拉机场 BEG", sub:"还车 · 广州中转回国", lat:44.8184, lon:20.2913, emoji:"✈️" }
+      { id:"d12-beg", name:"尼古拉·特斯拉机场 BEG", sub:"还车 · 回国", lat:44.8184, lon:20.2913, emoji:"✈️" }
     ]
   }
 ];
